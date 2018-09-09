@@ -17,8 +17,9 @@ title: The Orbital Eccentric
 description: >- # this means to ignore newlines until "baseurl:"
   Personal Blog of Alexander Reustle.
   Topics include AI, HPC, C++, Space, D&D
-baseurl: "/blog" # the subpath of your site, e.g. /blog
-url: "http://areustle.github.io" # the base hostname & protocol for your site, e.g. http://example.com
+baseurl: /blog
+url: http://areustle.github.io
+root: /
 github_username:  areustle
 
 # Build settings
