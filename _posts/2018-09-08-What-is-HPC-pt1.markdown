@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "What is High Performance Computing? (Part 1)"
-date: "2018-08-28 21:23:23 -0400"
+date: "2018-09-08 21:23:23 -0400"
 ---
 
 ![Summit Supercomputer](https://www.ornl.gov/sites/default/files/2018-P01559.jpg)
