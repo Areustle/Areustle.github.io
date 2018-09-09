@@ -1,0 +1,127 @@
+---
+layout: post
+title: "828L lecture 3"
+date: "2018-09-04 12:32:07 -0400"
+---
+
+
+# Regression and Classification
+
+Notation note: Input vectors today will be called $ y $ and labels will
+be called $\hat{y}$.
+
+Today we will be discussion Regression and Classification. In regression we
+want to find $f:f(y)\approx\hat{y}, \hat{y}\in R$ while minimizing the error
+as $\min{f(y)-\hat{y})}^2$.  Alternatively in Classification we create the
+function $f:f(y)\approx\hat{y}$ where $\hat{y}\in[-1,1]$ and our goal is to
+$\min{\frac{\vert f(y)-\hat{y}\vert}{2}}$. We care about the number of correct
+classifications in this mode.
+
+
+# Linear Regression
+
+Get a line that best fits the given data.
+$\min\sum{\Vert y\dot a-\hat{y}\Vert}^2$
+We assume that each vector has an added 1 for the bias.
+
+$$
+\begin{pmatrix} y_1 \\ y_2 \\ \vdots \\ y_n \end{pmatrix} a -
+\begin{pmatrix} \hat{}y_1 \\ \hat{}y_2 \\ \vdots \\ \hat{}y_n \end{pmatrix}
+$$
+
+$$
+\min\frac{1}{2}{\Vert ya-\hat{y}\Vert}^2 = L \\
+\frac{\partial L}{\partial a} = y^T(Ya-\hat{y}) = 0 \\
+Y^TYa = Y^T\hat{y} \\
+a = (y^Ty)^{-1} y^T\hat{y} \\
+$$
+
+That's simple linear regression.
+
+
+# Logistic Regression
+
+In Logistic Regression our goal is to Estimate the probability
+$P(\frac{\hat{y}}{y})$. Then we can pick the most probable label and
+reasonably assume that's our label. If we try to fit a linear system to this
+probability we are going to get a bad prediction. The linear system isn't
+constrained to lie between 0 and 1. The data may not be linearly separable, and
+the gradient is going to be constant for all wrong answers.
+
+Instead of doing linear regression on the probabilities, we're going to do
+linear regression on this logistic term:
+$\log(\frac{P(\hat{y}/y)}{1-P(\hat{y}/y)})\approx a^Ty$ One advantage of this
+is everything is symmetric about 0, monotonic, and bound to 0,1. Taking that to
+try to solve for the probability we get
+$P(\hat{y}/y)=\frac{e^{a^Ty}}{1+e^{a^Ty}}=\frac{1}{1+e^{-a^Ty}}\gt\half$ To do
+classification we must compare this to $\half$, or equivalently:
+
+$$
+\begin{align}
+1&>\frac{1}{2} ( 1+ e^{-a^Ty}) \\
+&> e^{a^Ty} \\
+&\rightarrow\text{Check }a^Ty > 0
+\end{align}
+$$
+
+How do we solve for this $a$ parameter? We can use a numerical optimization
+scheme like:
+
+$$
+\begin{align}
+\max{a}\prod{P_i} &\text{where} \\
+P_i &= P(\hat{y}=1/y) when label 1 \\
+&= P(\hat{y}=-1/y) when label -1 \\
+\end{align}
+$$
+
+This is a probability estimate approach to choosing a loss function. We instead
+could choose to minimize the number of incorrect classifications. However, that
+approach leads to discontinuous gradients which are hard to optimize for on
+gradient descent. As such this probability approach is better for deep learning.
+
+# Perceptrons
+
+Imagine a 2D plane with naughts and crosses. A reasonable goal to
+distinguishing between the 2 is to draw a line that separates the data. This
+is the "Linearly" separable approach to classification. If the data is
+linearly separable, then we can reason about the margin, which is the distance
+from the line to the closest point. In the perceptron algorithm we don't care
+about the margin, we are just looking for linear separability. In Support
+Vector Machines we care about maximizing this margin under the assumption that
+doing so produces a better estimate.
+
+The Perceptron algorithm is for a 2 class system.
+
+$$
+\begin{align}
+a^Ty &\gt 0 \text{ when } \hat{y}=1 \\
+a^Ty &\lt 0 \text{ when } \hat{y}=-1 \\
+&\rightarrow \text{a linearly separates the data.} \\
+\end{align}
+$$
+
+ Let's add the notational trick that $y\gets y\cdot \hat{y}$. Now I want $
+a^Ty >0 $. Let cost be $\sum{a^Ty_i < 0}$, i.e. the count of wrong labels.
+
+$$
+\begin{align}
+Y &= a^Ty_i \lt 0 \\
+J_p(a) &= \sum_{y\in Y}{-a^Ty} \\
+&= \sum_i{\max(0,-a^Ty)} \quad\text{side note, LP problem}\\
+\nabla J_p(a) &= \sum_{y\in Y}{-y} \\
+a(k+1) &= a(k)+\eta\sum{y} \\
+\end{align}
+$$
+
+Side note: ReLU is a linear programming problem seen as
+$J_p(a)=\sum_{y_i}{-a^Ty+c_i} s.t. -a^Ty_i+c_i \ge0, c_i\ge0 $
+Therefore the problem is convex and has a unique global optimum well sort of.
+We could solve this using linear programming, but in this case, perceptron is
+better.
+
+The perceptron works by going through all the examples and NOP on correct
+examples, then updating the parameter $a$ on incorrect examples. The rate of
+convergence on the perceptron algorithm is proportional to the magnitude of the
+margin.
+

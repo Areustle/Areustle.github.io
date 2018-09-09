@@ -1,0 +1,119 @@
+---
+layout: post
+title: "714 Lecture 3: PVM and MPI"
+date: "2018-09-04 13:59:54 -0400"
+---
+
+# Parallel Virtual Machine
+
+The goal of this program is to provide a simple free portable parallel
+environment that will run on anything.  It will handle parallel hardware,
+different network architectures, and heterogeneous types of machines. Type
+conversions and endianness is handled ass needed.
+
+PVM provides 2 things, first the message passing library which enables point to
+point messages, synchronization barriers etc.  And the daemon process which
+will create new tasks on the host machine.
+
+One PVM daemon per machine. The local processes talk to the PVM daemon locally,
+then the PVM daemon delivers messages to other PVM daemons on other hosts.
+Finally the foreign PVM daemon delivers the message to the foreign process.
+
+For the messages themselves, each message has a tag, which is an integer
+Identifying the message, user defined. Messages are constructed then sent. The
+construction packs the data into a PVM buffer, with the appropriate typing
+information. After it's sent the receiver must unpack the data according to the
+message.
+
+All processes are named based on task IDs (tids). Local and remote processes
+are the same and treated the same. tids are used in sends and received. There
+is no typing information in the PVM message, other than the tag. It's up to the
+programmer to use convention and read the tag, then build a buffer
+appropriately sized to hold the data.
+
+PVM Process control handles creating and ending processes.`pvm_spawn` with
+spawn tasks based on the name of the task, flags and location information and
+number of copies needed. The program must be installed already on the target
+machine, then returns the number of tasks started. Some process creations may
+have failed, hence why the number is necessary. Ending a task doesn't exit the
+process, just the PVM machine, using `pvm_exit`.
+
+PVM has a notion of group operations or collective operations. A group is a
+unit of communication. Processes join groups, then receive all the messages for
+that group. The group is just a list of process id's that are members of the
+group. The group also assigns unique IDs within particular groups; processes
+can communicate with other members of the group using this ID.
+
+Groups have the concept of barriers, which can involve a subset of the group.
+Once a count of processes have reached the barrier, all are released to
+proceed.
+
+PVM adds reduction operations that take function pointers defining the reduce.
+Pre-defined functions are provided by PVM, and user defined functions are
+allowed.
+
+PVM had performance issues. Messages go through the PVM daemon, which adds a
+lot of copies. Can use direct route options in later versions. Packing Messages
+has a lot of redundant copies. Also the heterogeneous system support adds
+overhead as extra information is sent to enable translation.
+
+# Message Passing Interface
+
+The goals of MPI were to standardize previous message passing implementations
+like PVM, P4, NX, MPL. They aimed to support copy free message passing, and
+portably support as many platforms as possible. It was an API, not an
+implementation. It supported point to point messaging, group communications,
+and a profiling interface.
+
+MPI will guarantee no buffering in standard mode. It's possible that a call to
+send will block until the corresponding receive is called. This prevents
+redundant copying. MPI enforces a delivery order such that 2 sends from the
+same process to the same destination will arrive in the same order; there's no
+guarantee of fairness between processes on receive. That means the receiver
+will not necessarily receive the messages in the order sent from different
+receivers. No messages are ever lost.
+
+PVM had groups, while MPI has communicators. MPI adds a context tag, assigned
+by the system and guaranteed to be unique. All processes within a communicator
+can be named. A communicator is a group of processes and a context, numbered
+from 0 to n-1. This allows libraries to be constructed. The application creates
+a communicator and the library uses the unique ID without interference. This is
+a form of scoping and prevents problems with wildcard receives.
+
+All MPI programs start with the MPI_COMM_WORLD communicator which is the global
+communicator for all processes. The model is different from PVM. Each process is
+a peer and all can communicate with and create groups.
+
+Non-Blocking point to point functions in MPI have 2 parts, posting the
+operation and waiting for results. This includes a poll or test option which
+checks to see if the operation has completed. The sender must not alter the
+buffer while the operation is pending. The result data is not valid for a
+receive until the operation completes. The receiver can poll to see if the data
+is valid and available, or await, to block until the data is usable.
+A blocking send/receive is equivalent to posting a non-blocking send/receive
+followed immediately by an await. The key is don't mess with buffers until the
+operation is complete.
+
+Collective communication operations are defined. A communicator specifies a
+group of processes that participate in a communication. Operations which may be
+optimized in an MPI implementation include: Barrier synchronization, broadcast,
+gather/scatter, reductions, and scans which prefix reductions. A Scan is a
+partial application of the reduction operation, for example a partial sum array
+is the scan, while the final value in the array is the reduction.
+
+## MPI in C or C++
+
+The symbols for MPI are accessed with "#include <mpi.h>".
+
+First MPI call in the program must be MPI_Init(&argc, &argv)
+MPI_Comm_rank(MPI_COMM_WORLD, &myrank). The program must be run on each node
+manually. MPI does lacks a daemon, you must run the program manually on the
+nodes which will participate.  Communication can include some user defined
+types, but disallow nodal (pointer based) graph structures.
+
+# Debugging and Testing Parallel Code
+
+Hard, but it can be done. Knowing common defect will reduce the time spent
+debugging. Novice developers can learn how to detect and prevent them. There
+are really no good open source tools because the community isn't big enough.
+
